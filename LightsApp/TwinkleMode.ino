@@ -52,7 +52,13 @@ void StepTwinkle(LED_Buffer &led_buffer) {
 
   // Set all LEDs with the same hue and brightness
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
-    new_led_array[i] = CHSV(globalHue, 200, globalBrightness);
+    if((i % 20) < 10) {
+      // Purple LED
+       new_led_array[i] = CHSV(192, 255, 255);
+    } else {
+      // Orange LED
+      new_led_array[i] = CHSV(16, 255, 255);
+    }
   }
 
   led_buffer.updateBufferWithArray(new_led_array);
