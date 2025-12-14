@@ -35,6 +35,8 @@ void StepTwinkle(LED_Buffer &led_buffer) {
   CRGB new_led_array[NUM_LEDS];
   const uint8_t hueDelta = 1;  // Increment for hue to cycle through colors
   const uint8_t brightnessDelta = 5;  // Increment for brightness strobe effect
+  static uint32_t lastStreakTime = 0;
+  static int streakPosition = -1;  // -1 means no active streak
 
   // Update global brightness
   if (brightnessIncreasing) {
@@ -58,6 +60,31 @@ void StepTwinkle(LED_Buffer &led_buffer) {
     } else {
       // Orange LED
       new_led_array[i] = CHSV(16, 255, 255);
+    }
+  }
+
+// --- Ghost streak trigger ---
+  uint32_t now = millis();
+  if (streakPosition == -1 && (now - lastStreakTime >= 15000)) {
+    streakPosition = 0;            // start the streak
+    lastStreakTime = now;
+  }
+    // --- Animate the streak ---
+  if (streakPosition >= 0) {
+    const uint8_t streakWidth = 5;
+    const uint8_t streakBrightness = 255;
+
+    for (int i = 0; i < streakWidth; i++) {
+      int idx = streakPosition - i;
+      if (idx >= 0 && idx < NUM_LEDS) {
+        uint8_t fade = 255 - i * (255 / streakWidth);  // fade tail
+        new_led_array[idx] = CRGB(fade, fade, fade);   // white fade
+      }
+    }
+
+    streakPosition++;
+    if (streakPosition - streakWidth > NUM_LEDS) {
+      streakPosition = -1;  // done
     }
   }
 

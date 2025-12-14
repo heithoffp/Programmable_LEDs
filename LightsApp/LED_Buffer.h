@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "FastLED.h"
 
-#define NUM_LEDS 150
+#define NUM_LEDS 200
 #define LED_BUFFER_SIZE 3
 //
 class LED_Buffer {
