@@ -8,11 +8,19 @@ LED_Buffer led_buffer;
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 
+// --- SPEED CONTROL ---
+// This controls how many milliseconds wait between animation updates.
+// 30ms is roughly 33 frames per second (Smooth)
+// 100ms is 10 frames per second (Choppy/Slow)
+#define ANIMATION_SPEED_MS 30 
+
 void setup() {
   // put your setup code here, to run once:
   FastLED.addLeds<WS2812, 26, RGB>(shownLeds, NUM_LEDS);
   Serial.begin(9600);
-  InitTwinkleMode();
+  
+  InitTwinkleMode(); // Initialize the Christmas Effect
+
   xTaskCreatePinnedToCore(
                     Task1code,   /* Task function. */
                     "Task1",     /* name of task. */
@@ -35,8 +43,6 @@ void setup() {
     delay(500); 
     disableCore0WDT();
     disableCore1WDT();
-    
-  
 }
 
 
@@ -47,7 +53,9 @@ void Task1code( void * pvParameters ){
 
     unsigned long now = millis();
     
-    if (now - last > 17) // 20ms = 50Hz
+    // This controls how often we SEND data to the strip (Refresh Rate)
+    // 17ms is approx 60hz. This is fine to leave as is.
+    if (now - last > 17) 
     {
       if(led_buffer.IsBufferReadyToBeWritten()) {
         last = now;
@@ -57,42 +65,39 @@ void Task1code( void * pvParameters ){
       }
       
     }
+    // Good practice in RTOS tasks to prevent watchdog starvation if the if-statement isn't met
+    delay(1); 
   } 
 }
 
-//Task2code: blinks an LED every 700 ms
+//Task2code: Calculates the animation logic
 void Task2code( void * pvParameters ){
 
+  unsigned long lastStepTime = 0;
 
   for(;;){
-    if(led_buffer.IsBufferReadyToBeUpdated()) {
-      StepTwinkle(led_buffer);
-      //StepSpiral(led_buffer);
-//      Step_SpiralTrails(led_buffer);
-//      Step_SpiralRainbow(led_buffer);
-//        Step_CandyCaneSpiral(led_buffer);
+    unsigned long now = millis();
+
+    // THIS is the new speed governor
+    if (now - lastStepTime > ANIMATION_SPEED_MS) {
+      
+      if(led_buffer.IsBufferReadyToBeUpdated()) {
+        lastStepTime = now;
+        
+        StepTwinkle(led_buffer);
+        
+        // StepSpiral(led_buffer);
+        // Step_SpiralTrails(led_buffer);
+        // Step_SpiralRainbow(led_buffer);
+        // Step_CandyCaneSpiral(led_buffer);
+      }
     }
+    
+    // Essential for ESP32: Yield to the OS so background tasks (WiFi/Bluetooth/System) don't crash
+    delay(1); 
   }
 }
 
-
-
 void loop() {
-  // put your main code here, to run repeatedly:
-  uint16_t i;
-
-//  for(i = 0; i < NUM_LEDS; i++) {
-//    if((i%3) == 0) {
-//      leds[i] = CRGB::Black;
-//    } else if((i%3) == 1) {
-//      leds[i] = CRGB::Black;
-//    } else {
-//      leds[i] = CRGB::Black;
-//    }
-//  }
-//  StepTwinkle();
-//  FastLED.show();
-//    delay(100);
-//    Serial.print("loop() running on core ");
-//    Serial.println(xPortGetCoreID());
+  // Main loop is empty because we are using RTOS Tasks
 }
